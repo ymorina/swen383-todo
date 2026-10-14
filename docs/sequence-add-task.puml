@@ -1,74 +1,81 @@
 @startuml AddTask
-title Week 2 — Add a normal task (main success scenario)
+title Weeks 4–5 — Add a normal task (main success scenario)
 actor User
 boundary "Browser input / Add button" as Input
-participant "Add click listener\nDOMContentLoaded setup" as Handler
-participant "app: TodoManager" as Manager
-participant "Browser localStorage" as Storage
+participant "add(type) in main.js" as Main
+participant "controller: TodoController" as Controller
+participant "service: TodoService" as Service
+participant "storage: LocalStorageHandler" as Storage
+participant "Browser localStorage" as BrowserStorage
+participant "renderer: TodoRenderer" as Renderer
 participant "Row markup helper" as Rows
-participant "Workload summary helper" as Summary
 boundary "Task container / document" as DOM
 
-note over Handler, Manager
-  Precondition: manager exists, saved tasks have been
-  loaded, and the initial page has been rendered.
+note over Controller, Renderer
+  Precondition: main.js has injected the dependencies;
+  stored tasks are loaded, callbacks are bound,
+  and controller.start() has rendered the page.
 end note
 
 User -> Input : type "Buy milk" and click Add Task
-Input -> Handler : click event
-activate Handler
-Handler -> Manager : addTask(input.value, 'simple')
-activate Manager
-Manager -> Manager : trim description; check length >= 3
-Manager -> Manager : create plain task record\n(Date.now(), normal priority, not completed)
-Manager -> Manager : tasks.push(task)
-Manager -> Manager : saveTasks()
-activate Manager
-Manager -> Storage : setItem('todo-tasks', JSON.stringify(tasks))
+Input -> Main : click handler calls add('simple')
+activate Main
+Main -> Controller : addTask(input.value, type)
+activate Controller
+Controller -> Service : addTask(description, type)
+activate Service
+Service -> Service : trim description; check length >= 3
+Service -> Service : create normal task record and append to tasks
+Service -> Storage : save(tasks)
 activate Storage
-Storage --> Manager : undefined (save completed)
+Storage -> BrowserStorage : setItem('todo-tasks', JSON.stringify(tasks))
+activate BrowserStorage
+BrowserStorage --> Storage : undefined (save completed)
+deactivate BrowserStorage
+Storage --> Service : undefined
 deactivate Storage
-deactivate Manager
+Service --> Controller : task.id
+deactivate Service
 
-Manager -> Manager : render(task.id)
-activate Manager
-Manager -> Manager : renderPendingRows()
-activate Manager
+Controller -> Renderer : render(service, newId)
+activate Renderer
+Renderer -> Renderer : renderPendingRows(service)
+activate Renderer
 loop each pending task
-  Manager -> Rows : buildTaskRow(id, desc, completed, priority, createdAt, true)
+  Renderer -> Rows : buildTaskRow(task fields, true)
   activate Rows
-  Rows --> Manager : row HTML
+  Rows --> Renderer : row HTML
   deactivate Rows
 end
-deactivate Manager
-Manager -> Manager : renderCompletedRows()
-activate Manager
+deactivate Renderer
+Renderer -> Renderer : renderCompletedRows(service)
+activate Renderer
 loop each completed task
-  Manager -> Rows : buildTaskRow(id, desc, completed, priority, createdAt, true)
+  Renderer -> Rows : buildTaskRow(task fields, true)
   activate Rows
-  Rows --> Manager : row HTML
+  Rows --> Renderer : row HTML
   deactivate Rows
 end
-deactivate Manager
-Manager -> Manager : find oldest pending description
-Manager -> Summary : calculate summary from manager.tasks
-activate Summary
-Summary --> Manager : done / urgent / normal counts
-deactivate Summary
-Manager -> DOM : assign container.innerHTML\n(status, pending and completed lists)
-Manager -> DOM : bind Done / Delete listeners
-Manager -> DOM : flash newly added row; schedule removal after 1500 ms
-Manager -> DOM : set document.title to pending count
-deactivate Manager
-Manager --> Handler : true
-deactivate Manager
-Handler -> Input : set input.value = ''
-deactivate Handler
+deactivate Renderer
+Renderer -> Renderer : find oldest pending description
+Renderer -> Service : getWorkloadSummary()
+activate Service
+Service --> Renderer : done / urgent / normal summary
+deactivate Service
+Renderer -> DOM : assign container.innerHTML\n(status, pending and completed lists)
+Renderer -> DOM : bind Done / Delete to supplied action callbacks
+Renderer -> DOM : flash new row; schedule removal; update title
+Renderer --> Controller : undefined
+deactivate Renderer
+Controller --> Main : newId
+deactivate Controller
+Main -> Input : set input.value = ''
+deactivate Main
 DOM --> User : new task is visible in To do
 
 note over Storage, DOM
   Success: the task is saved and displayed.
-  A reload loads it from localStorage.
-  Rejected short input is a separate scenario.
+  Rejected short input is a separate scenario:
+  service returns null, no save or redraw occurs.
 end note
 @enduml
