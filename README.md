@@ -16,7 +16,33 @@ runs in your browser. Nothing to install beyond Git, a browser, and an editor.
 
 - `index.html` - page structure
 - `style.css` - styling
-- `src/todo.js` - application logic
+- `src/TodoService.js` - task data, validation, task creation, and workload summary
+- `src/TodoRenderer.js` - page rendering and callback-based row actions
+- `src/LocalStorageHandler.js` - browser persistence through `load()` / `save(tasks)`
+- `src/TodoController.js` - coordinates Add, Done/Undo, and Delete
+- `src/main.js` - creates dependencies and wires input events
+- `SMELLS.md` - three findings from the original Week 1 source, with line citations
+- `docs/` - PlantUML diagrams, SVG previews, and completion/verification notes
+
+## Weekly checkpoints
+
+This fork is [ymorina/swen383-todo](https://github.com/ymorina/swen383-todo).
+The original starter is [valonraca/swen383-todo](https://github.com/valonraca/swen383-todo).
+
+Git tags preserve each design stage: `coursework/starter`, `coursework/week1`,
+`coursework/week2`, `coursework/week3`, `coursework/week4`, and `coursework/week5`.
+The Week 2 tag contains the original-code diagrams; the diagrams on `main`
+describe the current implementation. Use `git show coursework/week2:docs/class-diagram.puml`
+to inspect the original diagram without changing the working tree.
+
+The feature branches are `feat/solid-refactoring`, `feat/grasp-controller`, and
+`feat/w3-w4-refactor`. See [docs/COURSEWORK.md](docs/COURSEWORK.md) for the weekly
+deliverables and GitHub Issues, and [docs/VERIFICATION.md](docs/VERIFICATION.md)
+for the behavioral checks performed.
+
+The OCP Issue stays open for Week 6, as required by the lab sheets.
+The student handles the myCourses repository submission and team declaration;
+teammates can be added to GitHub when their usernames are available.
 
 ## License
 
