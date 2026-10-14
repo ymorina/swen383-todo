@@ -1,0 +1,52 @@
+@startuml ClassDiagram
+allowmixing
+title Week 2 — original Todo App (starter b32ff42)
+skinparam classAttributeIconSize 0
+hide empty members
+
+class TodoManager {
+  + tasks: Array<Object>
+  + container: HTMLElement
+  + TodoManager(containerId)
+  + loadTasks()
+  + saveTasks()
+  + addTask(description, type): boolean
+  + toggleComplete(id)
+  + deleteTask(id)
+  + renderPendingRows(): String
+  + renderCompletedRows(): String
+  + render(justAddedId)
+}
+
+rectangle "localStorage\ngetItem(key) / setItem(key, value)" as Storage <<browser API>>
+rectangle "DOM / document\ncontainer, buttons, title" as DOM <<browser API>>
+rectangle "buildTaskRow(id, desc, completed,\npriority, createdAt, showActions)" as RowHelper <<free function>>
+rectangle "Workload summary helper\nreads manager.tasks" as SummaryHelper <<free function>>
+rectangle "DOMContentLoaded listener\nconstructs manager and binds Add / Enter" as Startup <<startup function>>
+
+TodoManager ..> Storage : directly reads / writes
+TodoManager --> DOM : keeps a container reference
+TodoManager ..> RowHelper : builds pending / completed rows
+TodoManager ..> SummaryHelper : requests status text
+SummaryHelper ..> TodoManager : inspects public tasks
+Startup ..> TodoManager : creates and calls
+Startup ..> DOM : binds input events
+
+note left of TodoManager
+  The only declared class in src/todo.js.
+  All its properties and methods are public.
+  It owns the tasks array and creates plain records:
+  id, desc, completed, priority, createdAt.
+  There is no Task, TodoList, or Storage class.
+end note
+
+note bottom of Storage
+  Browser API dependency, not an owned part.
+  Saved records survive destruction of the manager.
+end note
+
+note bottom of DOM
+  Reference to an existing element, not composition.
+  The page owns its lifetime; the manager updates it.
+end note
+@enduml

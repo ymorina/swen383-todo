@@ -1,0 +1,74 @@
+@startuml AddTask
+title Week 2 — Add a normal task (main success scenario)
+actor User
+boundary "Browser input / Add button" as Input
+participant "Add click listener\nDOMContentLoaded setup" as Handler
+participant "app: TodoManager" as Manager
+participant "Browser localStorage" as Storage
+participant "Row markup helper" as Rows
+participant "Workload summary helper" as Summary
+boundary "Task container / document" as DOM
+
+note over Handler, Manager
+  Precondition: manager exists, saved tasks have been
+  loaded, and the initial page has been rendered.
+end note
+
+User -> Input : type "Buy milk" and click Add Task
+Input -> Handler : click event
+activate Handler
+Handler -> Manager : addTask(input.value, 'simple')
+activate Manager
+Manager -> Manager : trim description; check length >= 3
+Manager -> Manager : create plain task record\n(Date.now(), normal priority, not completed)
+Manager -> Manager : tasks.push(task)
+Manager -> Manager : saveTasks()
+activate Manager
+Manager -> Storage : setItem('todo-tasks', JSON.stringify(tasks))
+activate Storage
+Storage --> Manager : undefined (save completed)
+deactivate Storage
+deactivate Manager
+
+Manager -> Manager : render(task.id)
+activate Manager
+Manager -> Manager : renderPendingRows()
+activate Manager
+loop each pending task
+  Manager -> Rows : buildTaskRow(id, desc, completed, priority, createdAt, true)
+  activate Rows
+  Rows --> Manager : row HTML
+  deactivate Rows
+end
+deactivate Manager
+Manager -> Manager : renderCompletedRows()
+activate Manager
+loop each completed task
+  Manager -> Rows : buildTaskRow(id, desc, completed, priority, createdAt, true)
+  activate Rows
+  Rows --> Manager : row HTML
+  deactivate Rows
+end
+deactivate Manager
+Manager -> Manager : find oldest pending description
+Manager -> Summary : calculate summary from manager.tasks
+activate Summary
+Summary --> Manager : done / urgent / normal counts
+deactivate Summary
+Manager -> DOM : assign container.innerHTML\n(status, pending and completed lists)
+Manager -> DOM : bind Done / Delete listeners
+Manager -> DOM : flash newly added row; schedule removal after 1500 ms
+Manager -> DOM : set document.title to pending count
+deactivate Manager
+Manager --> Handler : true
+deactivate Manager
+Handler -> Input : set input.value = ''
+deactivate Handler
+DOM --> User : new task is visible in To do
+
+note over Storage, DOM
+  Success: the task is saved and displayed.
+  A reload loads it from localStorage.
+  Rejected short input is a separate scenario.
+end note
+@enduml
